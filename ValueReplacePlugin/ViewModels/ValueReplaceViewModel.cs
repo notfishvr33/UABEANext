@@ -120,28 +120,6 @@ public partial class ValueReplaceViewModel : ViewModelBase, IDialogAware<bool>
         _workspace = workspace;
         _funcs = funcs;
         _assets = assets;
-
-        LoadDefaultRules();
-    }
-
-    private void LoadDefaultRules()
-    {
-        var example = RuleViewModel.FromRule(new ReplaceRule
-        {
-            MatchName = "Night Ambience Loop",
-            Fields =
-            [
-                new FieldEntry { Field = "m_LoadType", Value = "2" },
-                new FieldEntry { Field = "m_BitsPerSample", Value = "16" },
-                new FieldEntry { Field = "m_Legacy3D", Value = "true" },
-                new FieldEntry { Field = "m_Resource.m_Source", Value = "sharedassets0.resource" },
-                new FieldEntry { Field = "m_Resource.m_Offset", Value = "5988864" },
-                new FieldEntry { Field = "m_Resource.m_Size", Value = "3974400" },
-                new FieldEntry { Field = "m_CompressionFormat", Value = "1" },
-            ]
-        });
-        Rules.Add(example);
-        SelectedRule = example;
     }
 
     [RelayCommand]
@@ -231,17 +209,7 @@ public partial class ValueReplaceViewModel : ViewModelBase, IDialogAware<bool>
             int skipped = 0;
             var errors = new List<string>();
 
-            var allAssets = WorkspaceItem
-                .GetAssetsFileWorkspaceItems(_workspace.RootItems)
-                .Where(item => item.Object is AssetsTools.NET.Extra.AssetsFileInstance)
-                .SelectMany(item =>
-                {
-                    var fileInst = (AssetsTools.NET.Extra.AssetsFileInstance)item.Object!;
-                    return fileInst.file.AssetInfos.OfType<AssetInst>();
-                })
-                .ToList();
-
-            foreach (var asset in allAssets)
+            foreach (var asset in _assets)
             {
                 var assetName = asset.DisplayName;
 

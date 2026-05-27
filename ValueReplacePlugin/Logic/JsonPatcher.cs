@@ -16,8 +16,114 @@ public static class JsonPatcher
         foreach (var entry in rule.Fields)
         {
             var value = ParseValue(entry.Value);
-            SetNestedValue(target, entry.Field, value);
+            SetValue(target, entry.Field, value);
         }
+    }
+
+    private static void SetValue(JObject root, string fieldPath, JToken value)
+    {
+        if (fieldPath.Contains("[first="))
+        {
+            SetNestedValueWithArrayLookup(root, fieldPath, value);
+            return;
+        }
+
+        if (!fieldPath.Contains('.'))
+        {
+            if (TrySetInFirstSecondArray(root, fieldPath, value))
+                return;
+        }
+
+        SetNestedValue(root, fieldPath, value);
+    }
+
+    private static bool TrySetInFirstSecondArray(JObject root, string name, JToken value)
+    {
+        bool found = false;
+        foreach (var array in FindAllArrays(root))
+        {
+            foreach (var item in array)
+            {
+                if (item is JObject obj &&
+                    obj["first"] is JToken firstToken &&
+                    firstToken.Type == JTokenType.String &&
+                    (string?)firstToken == name)
+                {
+                    obj["second"] = value;
+                    found = true;
+                }
+            }
+        }
+        return found;
+    }
+
+    private static IEnumerable<JArray> FindAllArrays(JToken token)
+    {
+        if (token is JArray arr)
+        {
+            yield return arr;
+            foreach (var child in arr)
+                foreach (var nested in FindAllArrays(child))
+                    yield return nested;
+        }
+        else if (token is JObject obj)
+        {
+            foreach (var prop in obj.Properties())
+                foreach (var nested in FindAllArrays(prop.Value))
+                    yield return nested;
+        }
+    }
+
+    private static void SetNestedValueWithArrayLookup(JObject root, string fieldPath, JToken value)
+    {
+        var bracketIdx = fieldPath.IndexOf("[first=", StringComparison.Ordinal);
+        var pathBefore = fieldPath[..bracketIdx].TrimEnd('.');
+        var remainder = fieldPath[(bracketIdx + 7)..];
+
+        var closingIdx = remainder.IndexOf(']');
+        if (closingIdx < 0)
+        {
+            SetNestedValue(root, fieldPath, value);
+            return;
+        }
+
+        var keyName = remainder[..closingIdx];
+        var afterBracket = remainder[(closingIdx + 1)..].TrimStart('.');
+
+        JToken? arrayToken = string.IsNullOrEmpty(pathBefore)
+            ? root
+            : NavigatePath(root, pathBefore);
+
+        if (arrayToken is not JArray array)
+            return;
+
+        foreach (var item in array)
+        {
+            if (item is JObject obj &&
+                obj["first"] is JToken firstToken &&
+                (string?)firstToken == keyName)
+            {
+                if (string.IsNullOrEmpty(afterBracket))
+                    obj.Replace(value);
+                else
+                    SetNestedValue(obj, afterBracket, value);
+                return;
+            }
+        }
+    }
+
+    private static JToken? NavigatePath(JObject root, string dotPath)
+    {
+        var parts = dotPath.Split('.');
+        JToken current = root;
+        foreach (var part in parts)
+        {
+            if (current is JObject obj && obj[part] is JToken next)
+                current = next;
+            else
+                return null;
+        }
+        return current;
     }
 
     private static void SetNestedValue(JObject root, string fieldPath, JToken value)
