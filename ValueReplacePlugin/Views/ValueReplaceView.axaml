@@ -1,0 +1,234 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ValueReplacePlugin.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="600"
+             x:Class="ValueReplacePlugin.Views.ValueReplaceView"
+             Background="{DynamicResource DockThemeBackgroundBrush}">
+
+    <UserControl.Styles>
+
+        <Style Selector="Label">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource DockThemeForegroundBrush}" />
+        </Style>
+
+        <Style Selector="TextBlock.label">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource DockThemeForegroundBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="TextBlock.hint">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{DynamicResource DockThemeForegroundBrush}" />
+            <Setter Property="Opacity" Value="0.55" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <Style Selector="TextBlock.status-ok">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="LimeGreen" />
+        </Style>
+
+        <Style Selector="TextBlock.status-err">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="OrangeRed" />
+        </Style>
+
+        <Style Selector="Button.icon">
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="6,4" />
+        </Style>
+
+    </UserControl.Styles>
+
+    <Grid Margin="12" RowDefinitions="Auto, *, Auto">
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+            <Label FontSize="13" FontWeight="SemiBold">Replace Field Values</Label>
+            <TextBlock Classes="hint">
+                Add rules — each rule targets assets by name and lists the fields to patch.
+                Leave asset name blank to apply to all selected assets.
+                Use dot notation for nested fields (e.g. m_Resource.m_Source).
+                Values are auto-typed: numbers, booleans, null, and strings are all supported.
+            </TextBlock>
+        </StackPanel>
+
+        <Grid Grid.Row="1" ColumnDefinitions="220, 8, *">
+
+            <Grid Grid.Column="0" RowDefinitions="Auto, *, Auto">
+
+                <TextBlock Grid.Row="0" Classes="label" Margin="0,0,0,4">Rules</TextBlock>
+
+                <ListBox Grid.Row="1"
+                         ItemsSource="{Binding Rules}"
+                         SelectedItem="{Binding SelectedRule}"
+                         BorderThickness="1"
+                         BorderBrush="{DynamicResource DockThemeBorderLowBrush}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:RuleViewModel">
+                            <TextBlock FontSize="12" VerticalAlignment="Center"
+                                       Text="{Binding MatchName}"
+                                       Foreground="{DynamicResource DockThemeForegroundBrush}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="4" Margin="0,6,0,0">
+                    <Button Content="+" Classes="icon" Padding="8,0"
+                            Command="{Binding AddRuleCommand}"
+                            ToolTip.Tip="Add rule" />
+                    <Button Content="-" Classes="icon" Padding="8,0"
+                            IsEnabled="{Binding SelectedRule, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            Command="{Binding RemoveSelectedRuleCommand}"
+                            ToolTip.Tip="Remove selected rule" />
+                </StackPanel>
+
+            </Grid>
+
+            <GridSplitter Grid.Column="1" Width="1" HorizontalAlignment="Center"
+                          ResizeBehavior="PreviousAndNext" />
+
+            <Panel Grid.Column="2">
+
+                <TextBlock Text="Select or add a rule on the left."
+                           Classes="hint"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           IsVisible="{Binding SelectedRule, Converter={x:Static ObjectConverters.IsNull}}" />
+
+                <ContentControl Content="{Binding SelectedRule}"
+                                IsVisible="{Binding SelectedRule, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate x:DataType="vm:RuleViewModel">
+                            <Grid RowDefinitions="Auto, Auto, Auto, *, Auto" Margin="8,0,0,0">
+
+                                <TextBlock Grid.Row="0" Classes="label" Margin="0,0,0,4">Asset Name</TextBlock>
+
+                                <TextBox Grid.Row="1"
+                                         Height="28"
+                                         FontSize="12"
+                                         Watermark="Leave blank to match all selected assets"
+                                         Text="{Binding MatchName}"
+                                         Margin="0,0,0,8" />
+
+                                <Grid Grid.Row="2" ColumnDefinitions="*, 8, *" Margin="0,0,0,10">
+                                    <StackPanel Grid.Column="0" Spacing="2">
+                                        <TextBlock Classes="label">Path ID</TextBlock>
+                                        <TextBox Height="26"
+                                                 FontSize="12"
+                                                 FontFamily="Consolas, Courier New, monospace"
+                                                 Watermark="optional"
+                                                 Text="{Binding PathId}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Spacing="2">
+                                        <TextBlock Classes="label">File ID</TextBlock>
+                                        <TextBox Height="26"
+                                                 FontSize="12"
+                                                 FontFamily="Consolas, Courier New, monospace"
+                                                 Watermark="optional"
+                                                 Text="{Binding FileId}" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Grid.Row="3" RowDefinitions="Auto, *">
+
+                                    <Grid Grid.Row="0" ColumnDefinitions="*, 130, 28" Margin="0,0,0,2">
+                                        <TextBlock Grid.Column="0" Classes="label">Field Path</TextBlock>
+                                        <TextBlock Grid.Column="1" Classes="label" Margin="6,0,0,0">Value</TextBlock>
+                                    </Grid>
+
+                                    <ScrollViewer Grid.Row="1"
+                                                  VerticalScrollBarVisibility="Auto"
+                                                  HorizontalScrollBarVisibility="Disabled">
+                                        <ItemsControl ItemsSource="{Binding Fields}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:FieldEntryViewModel">
+                                                    <Grid ColumnDefinitions="*, 130, 28" Margin="0,0,0,4">
+                                                        <TextBox Grid.Column="0"
+                                                                 Height="26"
+                                                                 FontSize="12"
+                                                                 FontFamily="Consolas, Courier New, monospace"
+                                                                 Watermark="e.g. m_Resource.m_Source"
+                                                                 Text="{Binding Field}" />
+                                                        <TextBox Grid.Column="1"
+                                                                 Margin="4,0,0,0"
+                                                                 Height="26"
+                                                                 FontSize="12"
+                                                                 FontFamily="Consolas, Courier New, monospace"
+                                                                 Watermark="value"
+                                                                 Text="{Binding Value}" />
+                                                        <Button Grid.Column="2"
+                                                                Margin="4,0,0,0"
+                                                                Content="-"
+                                                                Classes="icon"
+                                                                Command="{Binding RemoveCommand}"
+                                                                CommandParameter="{Binding}" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+
+                                </Grid>
+
+                                <Button Grid.Row="4"
+                                        Margin="0,6,0,0"
+                                        Content="+ Add Field"
+                                        Height="26"
+                                        Padding="10,0"
+                                        FontSize="12"
+                                        Command="{Binding AddFieldCommand}" />
+
+                            </Grid>
+                        </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
+
+            </Panel>
+
+        </Grid>
+
+        <Grid Grid.Row="2" ColumnDefinitions="Auto, Auto, *, Auto, Auto, Auto" Margin="0,10,0,0">
+
+            <Button Grid.Column="0" Content="Load config..." Command="{Binding LoadConfig}"
+                    Height="28" Padding="10,0" Margin="0,0,6,0" />
+            <Button Grid.Column="1" Content="Save config..." Command="{Binding SaveConfig}"
+                    Height="28" Padding="10,0" />
+
+            <TextBlock Grid.Column="2"
+                       Classes="status-ok"
+                       Text="{Binding StatusText}"
+                       IsVisible="{Binding !HasError}"
+                       VerticalAlignment="Center"
+                       Margin="10,0" />
+            <TextBlock Grid.Column="2"
+                       Classes="status-err"
+                       Text="{Binding StatusText}"
+                       IsVisible="{Binding HasError}"
+                       VerticalAlignment="Center"
+                       Margin="10,0" />
+
+            <Button Grid.Column="3" Content="Apply" Command="{Binding Apply}"
+                    Width="85" Height="30" Margin="0,0,8,0" />
+            <Button Grid.Column="4" Content="Close" Command="{Binding Close}"
+                    Width="85" Height="30" Margin="0,0,8,0" IsDefault="True" />
+            <Button Grid.Column="5" Content="Cancel" Command="{Binding Cancel}"
+                    Width="85" Height="30" IsCancel="True" />
+
+        </Grid>
+
+    </Grid>
+</UserControl>
