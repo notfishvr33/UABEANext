@@ -152,6 +152,9 @@ public static class JsonPatcher
         if (trimmed.Equals("null", StringComparison.OrdinalIgnoreCase))
             return JValue.CreateNull();
 
+        if (trimmed.Equals("null_tex", StringComparison.OrdinalIgnoreCase))
+            return JToken.Parse("{\"m_Texture\":{\"m_FileID\":0,\"m_PathID\":0},\"m_Scale\":{\"x\":1.0,\"y\":1.0},\"m_Offset\":{\"x\":0.0,\"y\":0.0}}");
+
         if (long.TryParse(trimmed, out var longVal))
             return JToken.FromObject(longVal);
 
@@ -163,6 +166,29 @@ public static class JsonPatcher
         {
             try { return JToken.Parse(trimmed); }
             catch { }
+        }
+
+        var parts = trimmed.Split(',');
+        if (parts.Length is 3 or 4)
+        {
+            var nums = parts.Select(p => p.Trim()).ToArray();
+            if (nums.All(n => double.TryParse(n, System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out _)))
+            {
+                double r = double.Parse(nums[0], System.Globalization.CultureInfo.InvariantCulture);
+                double g = double.Parse(nums[1], System.Globalization.CultureInfo.InvariantCulture);
+                double b = double.Parse(nums[2], System.Globalization.CultureInfo.InvariantCulture);
+                double a = parts.Length == 4
+                    ? double.Parse(nums[3], System.Globalization.CultureInfo.InvariantCulture)
+                    : 1.0;
+                return new JObject
+                {
+                    ["r"] = r,
+                    ["g"] = g,
+                    ["b"] = b,
+                    ["a"] = a
+                };
+            }
         }
 
         return JToken.FromObject(raw);
