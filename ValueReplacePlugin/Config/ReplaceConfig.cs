@@ -24,11 +24,8 @@ public class ReplaceRule
     [JsonProperty("matchName", NullValueHandling = NullValueHandling.Ignore)]
     public string? MatchName { get; set; }
 
-    [JsonProperty("pathId", NullValueHandling = NullValueHandling.Ignore)]
-    public long? PathId { get; set; }
-
-    [JsonProperty("fileId", NullValueHandling = NullValueHandling.Ignore)]
-    public int? FileId { get; set; }
+    [JsonProperty("matchPathId", NullValueHandling = NullValueHandling.Ignore)]
+    public long? MatchPathId { get; set; }
 
     [JsonProperty("fields")]
     public List<FieldEntry> Fields { get; set; } = [];

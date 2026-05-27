@@ -32,10 +32,7 @@ public partial class RuleViewModel : ObservableObject
     private string _matchName = string.Empty;
 
     [ObservableProperty]
-    private string _pathId = string.Empty;
-
-    [ObservableProperty]
-    private string _fileId = string.Empty;
+    private string _matchPathId = string.Empty;
 
     public ObservableCollection<FieldEntryViewModel> Fields { get; } = [];
 
@@ -57,8 +54,7 @@ public partial class RuleViewModel : ObservableObject
         return new ReplaceRule
         {
             MatchName = string.IsNullOrWhiteSpace(MatchName) ? null : MatchName.Trim(),
-            PathId = long.TryParse(PathId, out var pid) ? pid : null,
-            FileId = int.TryParse(FileId, out var fid) ? fid : null,
+            MatchPathId = long.TryParse(MatchPathId, out var pid) ? pid : null,
             Fields = Fields
                 .Where(f => !string.IsNullOrWhiteSpace(f.Field))
                 .Select(f => new FieldEntry { Field = f.Field.Trim(), Value = f.Value })
@@ -71,8 +67,7 @@ public partial class RuleViewModel : ObservableObject
         var vm = new RuleViewModel
         {
             MatchName = rule.MatchName ?? string.Empty,
-            PathId = rule.PathId?.ToString() ?? string.Empty,
-            FileId = rule.FileId?.ToString() ?? string.Empty,
+            MatchPathId = rule.MatchPathId?.ToString() ?? string.Empty,
         };
         foreach (var f in rule.Fields)
         {
@@ -209,12 +204,24 @@ public partial class ValueReplaceViewModel : ViewModelBase, IDialogAware<bool>
             int skipped = 0;
             var errors = new List<string>();
 
-            foreach (var asset in _assets)
+            var allAssets = WorkspaceItem
+                .GetAssetsFileWorkspaceItems(_workspace.RootItems)
+                .Where(item => item.Object is AssetsTools.NET.Extra.AssetsFileInstance)
+                .SelectMany(item =>
+                {
+                    var fileInst = (AssetsTools.NET.Extra.AssetsFileInstance)item.Object!;
+                    return fileInst.file.AssetInfos.OfType<AssetInst>();
+                })
+                .ToList();
+
+            foreach (var asset in allAssets)
             {
                 var assetName = asset.DisplayName;
 
                 var matchingRules = config.Rules
-                    .Where(r => r.MatchName is null || r.MatchName == assetName)
+                    .Where(r =>
+                        (r.MatchName is null || r.MatchName == assetName) &&
+                        (r.MatchPathId is null || r.MatchPathId == asset.PathId))
                     .ToList();
 
                 if (matchingRules.Count == 0)

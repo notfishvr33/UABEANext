@@ -7,12 +7,6 @@ public static class JsonPatcher
 {
     public static void ApplyPatch(JObject target, ReplaceRule rule)
     {
-        if (rule.PathId.HasValue)
-            target["m_PathID"] = rule.PathId.Value;
-
-        if (rule.FileId.HasValue)
-            target["m_FileID"] = rule.FileId.Value;
-
         foreach (var entry in rule.Fields)
         {
             var value = ParseValue(entry.Value);
